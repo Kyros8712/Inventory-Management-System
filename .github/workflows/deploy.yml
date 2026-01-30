@@ -32,7 +32,7 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          VITE_GOOGLE_APP_SCRIPT_URL: https://script.google.com/macros/s/AKfycbx_vr1KonyCrtz-8ZW7qEDppXQCMjpU2p4UjCVAoPiDqwtBZfRCjFyW_VOYfyd1yM_BVw/exec
+          VITE_GOOGLE_APP_SCRIPT_URL: ${{ secrets.VITE_GOOGLE_APP_SCRIPT_URL }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
