@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { RefreshCw, AlertTriangle, Plus, Edit2, Trash2, Check, X } from 'lucide-react';
+import { RefreshCw, AlertTriangle, Plus, Edit2, Trash2, Check, X, Settings } from 'lucide-react';
 import { api } from '../utils/api';
+import CategoryManager from './CategoryManager';
 
-const Dashboard = ({ inventory, orders = [], completedOrders = [], loading, refresh }) => {
+const Dashboard = ({ inventory, orders = [], completedOrders = [], categories = [], loading, refresh }) => {
     const [editingItem, setEditingItem] = useState(null);
     const [isAdding, setIsAdding] = useState(false);
+    const [showCategoryManager, setShowCategoryManager] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('全部');
     const [currentPage, setCurrentPage] = useState(1);
@@ -132,7 +134,10 @@ const Dashboard = ({ inventory, orders = [], completedOrders = [], loading, refr
     };
 
     // 搜尋與分頁邏輯
-    const categories = ['全部', ...new Set(inventory.map(item => item.category).filter(Boolean))];
+    const allCategories = categories.map(cat =>
+        cat.mainCategory + (cat.subCategory ? ' > ' + cat.subCategory : '')
+    );
+    const displayCategories = ['全部', ...allCategories];
 
     const filteredInventory = inventory.filter(item => {
         const matchesSearch = item.item.toLowerCase().includes(searchTerm.toLowerCase());
@@ -211,11 +216,14 @@ const Dashboard = ({ inventory, orders = [], completedOrders = [], loading, refr
                             className="btn"
                             style={{ padding: '7px', fontSize: '14px', backgroundColor: '#fff' }}
                         >
-                            {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                            {displayCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                         </select>
                     </div>
                 </div>
                 <div style={{ display: 'flex', gap: '10px' }}>
+                    <button className="btn" onClick={() => setShowCategoryManager(true)} title="管理類別">
+                        <Settings size={16} /> 管理類別
+                    </button>
                     <button className="btn btn-primary" onClick={() => {
                         setIsAdding(true);
                         setCurrentPage(1); // 新增商品時確保在第一頁看到輸入框
@@ -253,13 +261,14 @@ const Dashboard = ({ inventory, orders = [], completedOrders = [], loading, refr
                                     {addRows.map((row, index) => (
                                         <tr key={`add-${index}`} style={{ backgroundColor: '#F7F5F2' }}>
                                             <td>
-                                                <input
-                                                    type="text"
+                                                <select
                                                     value={row.category}
                                                     onChange={e => handleRowChange(index, 'category', e.target.value)}
-                                                    placeholder="分類"
-                                                    style={{ width: '80px' }}
-                                                />
+                                                    style={{ width: '120px', padding: '4px' }}
+                                                >
+                                                    <option value="">選擇分類</option>
+                                                    {allCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                                </select>
                                             </td>
                                             <td>
                                                 <input
@@ -332,12 +341,14 @@ const Dashboard = ({ inventory, orders = [], completedOrders = [], loading, refr
                                 editingItem === item.item ? (
                                     <tr key={index} style={{ backgroundColor: '#F7F5F2' }}>
                                         <td>
-                                            <input
-                                                type="text"
+                                            <select
                                                 value={formData.category}
                                                 onChange={e => setFormData({ ...formData, category: e.target.value })}
-                                                style={{ width: '80px' }}
-                                            />
+                                                style={{ width: '120px', padding: '4px' }}
+                                            >
+                                                <option value="">選擇分類</option>
+                                                {allCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                            </select>
                                         </td>
                                         <td>{item.item}</td>
                                         <td><input type="number" value={formData.totalStock} onChange={e => setFormData({ ...formData, totalStock: parseInt(e.target.value) || 0 })} /></td>
@@ -435,6 +446,16 @@ const Dashboard = ({ inventory, orders = [], completedOrders = [], loading, refr
                 <div style={{ textAlign: 'center', padding: '40px', color: '#8B7E74' }}>
                     找不到符合「{searchTerm}」的商品
                 </div>
+            )}
+
+            {/* 類別管理彈窗 */}
+            {showCategoryManager && (
+                <CategoryManager
+                    categories={categories}
+                    inventory={inventory}
+                    onClose={() => setShowCategoryManager(false)}
+                    onRefresh={refresh}
+                />
             )}
         </div>
     );

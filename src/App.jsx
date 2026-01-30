@@ -17,6 +17,7 @@ function App() {
     const [orders, setOrders] = useState([]);
     const [completedOrders, setCompletedOrders] = useState([]);
     const [activityLogs, setActivityLogs] = useState([]);
+    const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(false);
 
     // 從 GAS 獲取數據
@@ -32,6 +33,7 @@ function App() {
             setOrders(data.orders || []);
             setCompletedOrders(data.completedOrders || []);
             setActivityLogs(data.activityLogs || []);
+            setCategories(data.categories || []);
         } catch (error) {
             console.error('Fetch error:', error);
             if (error.message === 'Invalid API Key') {
@@ -75,6 +77,7 @@ function App() {
                             inventory={inventory}
                             orders={orders}
                             completedOrders={completedOrders}
+                            categories={categories}
                             loading={loading}
                             refresh={fetchData}
                         />
