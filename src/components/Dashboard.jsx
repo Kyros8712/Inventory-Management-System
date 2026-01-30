@@ -214,7 +214,7 @@ const Dashboard = ({ inventory, orders = [], completedOrders = [], categories = 
                                 setCurrentPage(1);
                             }}
                             className="btn"
-                            style={{ padding: '7px', fontSize: '14px', backgroundColor: '#fff' }}
+                            style={{ padding: '7px', fontSize: '14px', backgroundColor: '#fff', color: '#333' }}
                         >
                             {displayCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                         </select>
