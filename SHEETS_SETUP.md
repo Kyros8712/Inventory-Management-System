@@ -75,7 +75,7 @@
 
 在瀏覽器中開啟你的 GAS URL：
 ```
-https://script.google.com/macros/s/AKfycbzUXjR62DXYCmUW-_NDC2ldJ74XoGhywFUt3Td4aDBP4JEI_va1x2OWLM3y_mUTtCgH/exec
+https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
 ```
 
 **預期結果**（設置完成後）：
