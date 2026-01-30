@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { RefreshCw, AlertTriangle, Plus, Edit2, Trash2, Check, X } from 'lucide-react';
 import { api } from '../utils/api';
 
-const Dashboard = ({ inventory, loading, refresh }) => {
+const Dashboard = ({ inventory, orders = [], completedOrders = [], loading, refresh }) => {
     const [editingItem, setEditingItem] = useState(null);
     const [isAdding, setIsAdding] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -142,8 +142,41 @@ const Dashboard = ({ inventory, loading, refresh }) => {
         setCurrentPage(1); // 搜尋時重設回第一頁
     };
 
+    // 統計數據計算
+    const totalInventoryValue = inventory.reduce((acc, item) => acc + (item.unitCost * (item.availableStock || 0)), 0);
+    const totalPotentialProfit = inventory.reduce((acc, item) => acc + ((item.price - item.unitCost) * (item.availableStock || 0)), 0);
+    const activeOrdersCount = orders.length;
+    const completedOrdersCount = completedOrders.length;
+
     return (
         <div className="fade-in">
+            {/* 數據統計概覽卡片 */}
+            {!loading && (
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gap: '20px',
+                    marginBottom: '30px'
+                }}>
+                    <div className="card" style={{ padding: '20px', textAlign: 'center', borderTop: '4px solid #8B7E74' }}>
+                        <div style={{ color: '#8B7E74', fontSize: '14px', marginBottom: '8px' }}>庫存總價值 (成本)</div>
+                        <div style={{ fontSize: '24px', fontWeight: 'bold' }}>${totalInventoryValue.toLocaleString()}</div>
+                    </div>
+                    <div className="card" style={{ padding: '20px', textAlign: 'center', borderTop: '4px solid #D1C7BD' }}>
+                        <div style={{ color: '#8B7E74', fontSize: '14px', marginBottom: '8px' }}>預計總利潤</div>
+                        <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#B22222' }}>${totalPotentialProfit.toLocaleString()}</div>
+                    </div>
+                    <div className="card" style={{ padding: '20px', textAlign: 'center', borderTop: '4px solid #E1D9D1' }}>
+                        <div style={{ color: '#8B7E74', fontSize: '14px', marginBottom: '8px' }}>進行中訂單</div>
+                        <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{activeOrdersCount}</div>
+                    </div>
+                    <div className="card" style={{ padding: '20px', textAlign: 'center', borderTop: '4px solid #F2EEE9' }}>
+                        <div style={{ color: '#8B7E74', fontSize: '14px', marginBottom: '8px' }}>已完成訂單</div>
+                        <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{completedOrdersCount}</div>
+                    </div>
+                </div>
+            )}
+
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
                 <div>
                     <h2>庫存即時狀態</h2>

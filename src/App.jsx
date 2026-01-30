@@ -97,7 +97,15 @@ function App() {
                         <button className={`btn ${view === 'completed-orders' ? 'btn-primary' : ''}`} onClick={() => setView('completed-orders')}>營收分析 (完成訂單)</button>
                     </nav>
 
-                    {view === 'dashboard' && <Dashboard inventory={inventory} loading={loading} refresh={fetchData} />}
+                    {view === 'dashboard' && (
+                        <Dashboard
+                            inventory={inventory}
+                            orders={orders}
+                            completedOrders={completedOrders}
+                            loading={loading}
+                            refresh={fetchData}
+                        />
+                    )}
                     {view === 'order' && <OrderForm inventory={inventory} onComplete={() => setView('dashboard')} />}
                     {view === 'order-list' && <OrderManager data={orders} loading={loading} refresh={fetchData} />}
                     {view === 'completed-orders' && <CompletedOrders data={completedOrders} loading={loading} />}
