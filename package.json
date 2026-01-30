@@ -2,6 +2,11 @@
   "name": "inventory-management-system",
   "private": true,
   "version": "0.0.0",
+  "homepage": "https://Kyros8712.github.io/Inventory-Management-System",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kyros8712/Inventory-Management-System.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
