@@ -5,6 +5,9 @@ import { api } from '../utils/api';
 const Dashboard = ({ inventory, loading, refresh }) => {
     const [editingItem, setEditingItem] = useState(null);
     const [isAdding, setIsAdding] = useState(false);
+    const [addRows, setAddRows] = useState([
+        { item: '', totalStock: 0, unitCost: 0, price: 0 }
+    ]);
     const [formData, setFormData] = useState({
         item: '',
         totalStock: 0,
@@ -43,23 +46,39 @@ const Dashboard = ({ inventory, loading, refresh }) => {
         }
     };
 
+    const handleAddRow = () => {
+        setAddRows([...addRows, { item: '', totalStock: 0, unitCost: 0, price: 0 }]);
+    };
+
+    const handleRemoveRow = (index) => {
+        if (addRows.length === 1) return;
+        setAddRows(addRows.filter((_, i) => i !== index));
+    };
+
+    const handleRowChange = (index, field, value) => {
+        const newRows = [...addRows];
+        newRows[index] = { ...newRows[index], [field]: value };
+        setAddRows(newRows);
+    };
+
     const handleAdd = async () => {
-        if (!formData.item) {
-            alert('請輸入品項名稱');
+        const validRows = addRows.filter(row => row.item.trim() !== '');
+        if (validRows.length === 0) {
+            alert('請至少輸入一個品項名稱');
             return;
         }
-        try {
-            console.log('Sending add request:', formData);
-            await api.post('addInventoryItem', { ...formData });
 
-            alert('新增成功！');
+        try {
+            console.log('Sending bulk add request:', validRows);
+            await api.post('bulkAddInventoryItems', { items: validRows });
+
+            alert(`成功新增 ${validRows.length} 項商品！`);
             setIsAdding(false);
-            setFormData({ item: '', totalStock: 0, unitCost: 0, price: 0 });
+            setAddRows([{ item: '', totalStock: 0, unitCost: 0, price: 0 }]);
             refresh();
         } catch (e) {
-            console.error('Add error:', e);
+            console.error('Bulk Add error:', e);
             alert('新增失敗，請確認後端連結。錯誤: ' + e.message);
-            setIsAdding(false);
             refresh();
         }
     };
@@ -138,20 +157,75 @@ const Dashboard = ({ inventory, loading, refresh }) => {
                         </thead>
                         <tbody>
                             {isAdding && (
-                                <tr style={{ backgroundColor: '#F7F5F2' }}>
-                                    <td><input type="text" value={formData.item} onChange={e => setFormData({ ...formData, item: e.target.value })} placeholder="品項名稱" /></td>
-                                    <td><input type="number" value={formData.totalStock} onChange={e => setFormData({ ...formData, totalStock: parseInt(e.target.value) || 0 })} /></td>
-                                    <td>0</td>
-                                    <td>{formData.totalStock}</td>
-                                    <td><input type="number" value={formData.unitCost} onChange={e => setFormData({ ...formData, unitCost: parseInt(e.target.value) || 0 })} /></td>
-                                    <td><input type="number" value={formData.price} onChange={e => setFormData({ ...formData, price: parseInt(e.target.value) || 0 })} /></td>
-                                    <td>{calculateMargin(formData.unitCost, formData.price)}</td>
-                                    <td>-</td>
-                                    <td>
-                                        <button className="btn" onClick={handleAdd}><Check size={14} /></button>
-                                        <button className="btn" onClick={() => setIsAdding(false)}><X size={14} /></button>
-                                    </td>
-                                </tr>
+                                <>
+                                    {addRows.map((row, index) => (
+                                        <tr key={`add-${index}`} style={{ backgroundColor: '#F7F5F2' }}>
+                                            <td>
+                                                <input
+                                                    type="text"
+                                                    value={row.item}
+                                                    onChange={e => handleRowChange(index, 'item', e.target.value)}
+                                                    placeholder="品項名稱"
+                                                />
+                                            </td>
+                                            <td>
+                                                <input
+                                                    type="number"
+                                                    value={row.totalStock}
+                                                    onChange={e => handleRowChange(index, 'totalStock', parseInt(e.target.value) || 0)}
+                                                />
+                                            </td>
+                                            <td>0</td>
+                                            <td>{row.totalStock}</td>
+                                            <td>
+                                                <input
+                                                    type="number"
+                                                    value={row.unitCost}
+                                                    onChange={e => handleRowChange(index, 'unitCost', parseInt(e.target.value) || 0)}
+                                                />
+                                            </td>
+                                            <td>
+                                                <input
+                                                    type="number"
+                                                    value={row.price}
+                                                    onChange={e => handleRowChange(index, 'price', parseInt(e.target.value) || 0)}
+                                                />
+                                            </td>
+                                            <td>{calculateMargin(row.unitCost, row.price)}</td>
+                                            <td>-</td>
+                                            <td>
+                                                <div style={{ display: 'flex', gap: '4px' }}>
+                                                    {index === addRows.length - 1 && (
+                                                        <button className="btn" onClick={handleAddRow} title="新增一列">
+                                                            <Plus size={14} />
+                                                        </button>
+                                                    )}
+                                                    {addRows.length > 1 && (
+                                                        <button className="btn" onClick={() => handleRemoveRow(index)} title="移除此列">
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    <tr style={{ backgroundColor: '#F7F5F2' }}>
+                                        <td colSpan="8"></td>
+                                        <td>
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                <button className="btn btn-primary" onClick={handleAdd} style={{ padding: '4px 12px' }}>
+                                                    <Check size={14} /> 全部儲存
+                                                </button>
+                                                <button className="btn" onClick={() => {
+                                                    setIsAdding(false);
+                                                    setAddRows([{ item: '', totalStock: 0, unitCost: 0, price: 0 }]);
+                                                }}>
+                                                    <X size={14} color="#B22222" /> 取消
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </>
                             )}
                             {inventory.map((item, index) => (
                                 editingItem === item.item ? (
