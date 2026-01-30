@@ -5,6 +5,10 @@ import { api } from '../utils/api';
 const Dashboard = ({ inventory, loading, refresh }) => {
     const [editingItem, setEditingItem] = useState(null);
     const [isAdding, setIsAdding] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+
     const [addRows, setAddRows] = useState([
         { item: '', totalStock: 0, unitCost: 0, price: 0 }
     ]);
@@ -123,12 +127,47 @@ const Dashboard = ({ inventory, loading, refresh }) => {
         }
     };
 
+    // 搜尋與分頁邏輯
+    const filteredInventory = inventory.filter(item =>
+        item.item.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const totalPages = Math.ceil(filteredInventory.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedInventory = filteredInventory.slice(startIndex, startIndex + itemsPerPage);
+
+    // 切換分頁時回到頂部或重設
+    const handleSearchChange = (e) => {
+        setSearchTerm(e.target.value);
+        setCurrentPage(1); // 搜尋時重設回第一頁
+    };
+
     return (
         <div className="fade-in">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <h2>庫存即時狀態</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
+                <div>
+                    <h2>庫存即時狀態</h2>
+                    <div style={{ marginTop: '10px', position: 'relative' }}>
+                        <input
+                            type="text"
+                            placeholder="🔍 搜尋商品名稱..."
+                            value={searchTerm}
+                            onChange={handleSearchChange}
+                            style={{
+                                padding: '8px 12px',
+                                borderRadius: '4px',
+                                border: '1px solid #D1C7BD',
+                                width: '250px',
+                                fontSize: '14px'
+                            }}
+                        />
+                    </div>
+                </div>
                 <div style={{ display: 'flex', gap: '10px' }}>
-                    <button className="btn btn-primary" onClick={() => setIsAdding(true)}>
+                    <button className="btn btn-primary" onClick={() => {
+                        setIsAdding(true);
+                        setCurrentPage(1); // 新增商品時確保在第一頁看到輸入框
+                    }}>
                         <Plus size={16} /> 新增商品
                     </button>
                     <button className="btn" onClick={refresh} disabled={loading}>
@@ -227,7 +266,7 @@ const Dashboard = ({ inventory, loading, refresh }) => {
                                     </tr>
                                 </>
                             )}
-                            {inventory.map((item, index) => (
+                            {paginatedInventory.map((item, index) => (
                                 editingItem === item.item ? (
                                     <tr key={index} style={{ backgroundColor: '#F7F5F2' }}>
                                         <td>{item.item}</td>
@@ -274,6 +313,58 @@ const Dashboard = ({ inventory, loading, refresh }) => {
                     </table>
                 )}
             </div>
+
+            {/* 分頁控制項 */}
+            {!loading && totalPages > 1 && (
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    marginTop: '20px',
+                    gap: '10px'
+                }}>
+                    <button
+                        className="btn"
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage(prev => prev - 1)}
+                        style={{ padding: '5px 10px' }}
+                    >
+                        上一頁
+                    </button>
+
+                    <div style={{ display: 'flex', gap: '5px' }}>
+                        {[...Array(totalPages)].map((_, i) => (
+                            <button
+                                key={i + 1}
+                                className={`btn ${currentPage === i + 1 ? 'btn-primary' : ''}`}
+                                onClick={() => setCurrentPage(i + 1)}
+                                style={{
+                                    minWidth: '35px',
+                                    padding: '5px'
+                                }}
+                            >
+                                {i + 1}
+                            </button>
+                        ))}
+                    </div>
+
+                    <button
+                        className="btn"
+                        disabled={currentPage === totalPages}
+                        onClick={() => setCurrentPage(prev => prev + 1)}
+                        style={{ padding: '5px 10px' }}
+                    >
+                        下一頁
+                    </button>
+                </div>
+            )}
+
+            {/* 搜尋無結果提示 */}
+            {!loading && filteredInventory.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '40px', color: '#8B7E74' }}>
+                    找不到符合「{searchTerm}」的商品
+                </div>
+            )}
         </div>
     );
 };
