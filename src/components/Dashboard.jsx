@@ -6,17 +6,19 @@ const Dashboard = ({ inventory, orders = [], completedOrders = [], loading, refr
     const [editingItem, setEditingItem] = useState(null);
     const [isAdding, setIsAdding] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('全部');
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
     const [addRows, setAddRows] = useState([
-        { item: '', totalStock: 0, unitCost: 0, price: 0 }
+        { item: '', totalStock: 0, unitCost: 0, price: 0, category: '' }
     ]);
     const [formData, setFormData] = useState({
         item: '',
         totalStock: 0,
         unitCost: 0,
-        price: 0
+        price: 0,
+        category: ''
     });
 
     const calculateMargin = (cost, price) => {
@@ -31,7 +33,8 @@ const Dashboard = ({ inventory, orders = [], completedOrders = [], loading, refr
             item: item.item,
             totalStock: item.totalStock || item.stock || 0,
             unitCost: item.unitCost || 0,
-            price: item.price || 0
+            price: item.price || 0,
+            category: item.category || ''
         });
     };
 
@@ -41,17 +44,18 @@ const Dashboard = ({ inventory, orders = [], completedOrders = [], loading, refr
                 originalItem: editingItem,
                 ...formData
             });
+            alert('✅ 更新成功');
             setEditingItem(null);
             refresh();
         } catch (e) {
-            alert('更新失敗，請確認後端連結。');
+            alert('❌ 更新失敗，請確認後端連結。');
             setEditingItem(null);
             refresh();
         }
     };
 
     const handleAddRow = () => {
-        setAddRows([...addRows, { item: '', totalStock: 0, unitCost: 0, price: 0 }]);
+        setAddRows([...addRows, { item: '', totalStock: 0, unitCost: 0, price: 0, category: '' }]);
     };
 
     const handleRemoveRow = (index) => {
@@ -128,9 +132,13 @@ const Dashboard = ({ inventory, orders = [], completedOrders = [], loading, refr
     };
 
     // 搜尋與分頁邏輯
-    const filteredInventory = inventory.filter(item =>
-        item.item.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const categories = ['全部', ...new Set(inventory.map(item => item.category).filter(Boolean))];
+
+    const filteredInventory = inventory.filter(item => {
+        const matchesSearch = item.item.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesCategory = selectedCategory === '全部' || item.category === selectedCategory;
+        return matchesSearch && matchesCategory;
+    });
 
     const totalPages = Math.ceil(filteredInventory.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -180,7 +188,7 @@ const Dashboard = ({ inventory, orders = [], completedOrders = [], loading, refr
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
                 <div>
                     <h2>庫存即時狀態</h2>
-                    <div style={{ marginTop: '10px', position: 'relative' }}>
+                    <div style={{ marginTop: '10px', display: 'flex', gap: '10px', alignItems: 'center' }}>
                         <input
                             type="text"
                             placeholder="🔍 搜尋商品名稱..."
@@ -190,10 +198,21 @@ const Dashboard = ({ inventory, orders = [], completedOrders = [], loading, refr
                                 padding: '8px 12px',
                                 borderRadius: '4px',
                                 border: '1px solid #D1C7BD',
-                                width: '250px',
+                                width: '200px',
                                 fontSize: '14px'
                             }}
                         />
+                        <select
+                            value={selectedCategory}
+                            onChange={(e) => {
+                                setSelectedCategory(e.target.value);
+                                setCurrentPage(1);
+                            }}
+                            className="btn"
+                            style={{ padding: '7px', fontSize: '14px', backgroundColor: '#fff' }}
+                        >
+                            {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                        </select>
                     </div>
                 </div>
                 <div style={{ display: 'flex', gap: '10px' }}>
@@ -216,6 +235,7 @@ const Dashboard = ({ inventory, orders = [], completedOrders = [], loading, refr
                     <table>
                         <thead>
                             <tr>
+                                <th style={{ width: '80px' }}>分類</th>
                                 <th>品項</th>
                                 <th>庫存量</th>
                                 <th>訂單預售</th>
@@ -232,6 +252,15 @@ const Dashboard = ({ inventory, orders = [], completedOrders = [], loading, refr
                                 <>
                                     {addRows.map((row, index) => (
                                         <tr key={`add-${index}`} style={{ backgroundColor: '#F7F5F2' }}>
+                                            <td>
+                                                <input
+                                                    type="text"
+                                                    value={row.category}
+                                                    onChange={e => handleRowChange(index, 'category', e.target.value)}
+                                                    placeholder="分類"
+                                                    style={{ width: '80px' }}
+                                                />
+                                            </td>
                                             <td>
                                                 <input
                                                     type="text"
@@ -282,7 +311,7 @@ const Dashboard = ({ inventory, orders = [], completedOrders = [], loading, refr
                                         </tr>
                                     ))}
                                     <tr style={{ backgroundColor: '#F7F5F2' }}>
-                                        <td colSpan="8"></td>
+                                        <td colSpan="9"></td>
                                         <td>
                                             <div style={{ display: 'flex', gap: '8px' }}>
                                                 <button className="btn btn-primary" onClick={handleAdd} style={{ padding: '4px 12px' }}>
@@ -302,6 +331,14 @@ const Dashboard = ({ inventory, orders = [], completedOrders = [], loading, refr
                             {paginatedInventory.map((item, index) => (
                                 editingItem === item.item ? (
                                     <tr key={index} style={{ backgroundColor: '#F7F5F2' }}>
+                                        <td>
+                                            <input
+                                                type="text"
+                                                value={formData.category}
+                                                onChange={e => setFormData({ ...formData, category: e.target.value })}
+                                                style={{ width: '80px' }}
+                                            />
+                                        </td>
                                         <td>{item.item}</td>
                                         <td><input type="number" value={formData.totalStock} onChange={e => setFormData({ ...formData, totalStock: parseInt(e.target.value) || 0 })} /></td>
                                         <td>{item.preOrderStock || 0}</td>
@@ -317,6 +354,7 @@ const Dashboard = ({ inventory, orders = [], completedOrders = [], loading, refr
                                     </tr>
                                 ) : (
                                     <tr key={index}>
+                                        <td style={{ fontSize: '12px', color: '#8B7E74' }}>{item.category || '未分類'}</td>
                                         <td>{item.item}</td>
                                         <td>{item.totalStock || item.stock}</td>
                                         <td>{item.preOrderStock || 0}</td>
